@@ -1,22 +1,125 @@
 ---
-title: "Practical Machine Learning Coursera Project"
+title: "Practical Machine Learning Course Project"
 author: "Victoria Milideeva"
-date: "March 26, 2016"
+date: "March 27, 2016"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+###Synopsys
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+The goal of this project is to predict the "classe" variable that defines the manner in which 6 participants did the exercise. For this purpose data from accelerometers on the belt, forearm, arm, and dumbell were analyzed.After cleaning and preprocessing data output was trained agains 28 predictors. There were 2 models were applied -  tree and linear discriminant analysis. The best model is "lda" model. It makes predictions with accuracy around 0.98.
+
+
+###Data Processing
 
 ```{r}
-summary(cars)
+library(caret);library(tree);library(randomForest);library(plyr);library(dplyr)
+library(MASS)
+cache = TRUE
+data<-read.csv("pml-training.csv")
+datatst<-read.csv("pml-testing.csv")
+dm <- dim(data)
+tstclass <- "classe"  %in%  names(datatst)
+
+for(i in 1:length(names(data))){
+    b<-(data[,i])
+    b[as.character(b) =="#DIV/0!"| as.character(b)==""]=NA
+    data[,i] = b}
+
+exfeat<- NULL
+for (i in 1:length(names(data))){ 
+    if(sum(is.na(data[,i]))/length(data[,i])>0.75){
+        exfeat<- c(exfeat,i)
+        }
+    }
+data1 <- data[,-exfeat]
+
+
+dm1 <- dim(data1)
+count <- length(exfeat)
+output<-which(names(data1)=="classe")
+for (i in 1:(length(names(data1))-1)){  data1[,i]= as.numeric(data1[,i])}
+
+
+```
+The original training data set contains `r dm[1]` observations of `r dm[2]`  variables. The data set  "pml-testing.csv" does not contain "classe" column and can't be used for evaluation models.
+The following figure shows histogram of variable "classe" in training data set. 
+
+```{r}
+#create histogram of classes
+fig1<-data%>% group_by(classe) %>% summarise(totalclass = n())
+ggplot(fig1, aes(x=classe, y=totalclass, fill = classe)) +
+    geom_bar(stat="identity")+theme(axis.text.x = element_text(angle = 0,hjust = 1))+
+   xlab("Class") +ylab("Total execises of each class")+ ggtitle ("Histogram of classes of exercises ")
 ```
 
-You can also embed plots, for example:
 
-```{r, echo=FALSE}
-plot(cars)
+`r count` columns contain more than 75% 'NA' values. 
+After excluding these variables, the data set contains `r dm1[2]`  varibles.
+Split the training data set into the training, validation and testing sets to evaluate the model.
+
+```{r}
+set.seed(35)
+inTrain<-createDataPartition(y=data1$classe,p=0.95,list = FALSE)
+trainvalid<-data1[inTrain,]
+trainVal <- createDataPartition(trainvalid$classe,p=0.95,list = FALSE)
+training<-trainvalid[trainVal,]
+valid <- trainvalid[-trainVal,]
+test<-data1[-inTrain,]
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Choose the least amount of predictors using "principal component analysis" and "near zero variance" methods that could capture 95% if the variation in data.
+
+```{r}
+pc<-preProcess(training[,-output], method = c("nzv","pca"), thresh = 0.95)
+pcacmp <-pc$numComp
+```
+
+`r pcacmp`  components are needed to capture 95 % of the variation in data
+Compute new variables for `r pcacmp` principal components for the data sets for building and evaluating a model
+
+```{r, echo=TRUE}
+trainpc<-predict(pc, training[,-output])
+validpc<-predict(pc, valid[,-output])
+testpc<-predict(pc, test[,-output])
+#create models
+#tree
+models <- NULL
+tr <- tree(training$classe ~., data = trainpc)
+plot(tr, main = "Plot of Tree Model")
+trpr <- prune.tree(tr)
+plot(trpr, main = "Size of Tree vs Error\n")
+#predict on the validation data set
+predvalid<- predict(tr, newdata = validpc, type = "class")
+#calculate accuracy for validation set
+errortr <-sum(predvalid==valid[,output])/length(predvalid)
+models<-c(models,tr)
+
+#linear discriminant analysis model
+lda <- train(training$classe~.,data = trainpc, method="lda")
+#predict on the validation data set
+predvallda<-predict(lda, newdata = validpc, type = "raw")
+#calculate accuracy for the validation set
+errorlda <-sum(predvallda==valid[,output])/length(predvallda)
+models<-c(models,lda)
+modelaccur<-c(errortr, errorlda)
+
+names(models)<-c("tree","lda")
+
+bestmodel<-names(models)[which(modelaccur == max(modelaccur))]
+#test the best model on the testing data set
+testpred<-predict(lda, newdata = testpc, type = "raw")
+accurtst<-sum(testpred==test[,output])/length(test[,output])
+```
+
+According to analysis, the best model is `r bestmodel`. Calculated accuracy on the testing 
+data set is `r accurtst`
+ Confusion matrix for the best model for the test data set:
+
+
+```{r}
+confusionMatrix(test$classe, testpred)
+```
+ 
