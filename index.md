@@ -1,6 +1,11 @@
-# Practical Machine Learning Course Project
-Victoria Milideeva  
-March 27, 2016  
+---
+title: "Practical Machine Learning Course Project"
+author: "Victoria Milideeva"
+date: "March 27, 2016"
+output: 
+  html_document: 
+    keep_md: yes
+---
 
 ###Synopsys
 
@@ -13,62 +18,7 @@ The goal of this project is to predict the "classe" variable that defines the ma
 
 ```r
 library(caret);library(tree);library(randomForest);library(plyr);library(dplyr)
-```
-
-```
-## Loading required package: lattice
-## Loading required package: ggplot2
-```
-
-```
-## Warning: package 'ggplot2' was built under R version 3.2.3
-```
-
-```
-## randomForest 4.6-12
-## Type rfNews() to see new features/changes/bug fixes.
-## 
-## Attaching package: 'randomForest'
-## 
-## The following object is masked from 'package:ggplot2':
-## 
-##     margin
-## 
-## 
-## Attaching package: 'dplyr'
-## 
-## The following objects are masked from 'package:plyr':
-## 
-##     arrange, count, desc, failwith, id, mutate, rename, summarise,
-##     summarize
-## 
-## The following object is masked from 'package:randomForest':
-## 
-##     combine
-## 
-## The following objects are masked from 'package:stats':
-## 
-##     filter, lag
-## 
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union
-```
-
-```r
 library(MASS)
-```
-
-```
-## 
-## Attaching package: 'MASS'
-## 
-## The following object is masked from 'package:dplyr':
-## 
-##     select
-```
-
-```r
 cache = TRUE
 data<-read.csv("pml-training.csv")
 datatst<-read.csv("pml-testing.csv")
@@ -107,7 +57,7 @@ ggplot(fig1, aes(x=classe, y=totalclass, fill = classe)) +
    xlab("Class") +ylab("Total execises of each class")+ ggtitle ("Histogram of classes of exercises ")
 ```
 
-![](index_files/figure-html/unnamed-chunk-2-1.png) 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
 
 
 100 columns contain more than 75% 'NA' values. 
@@ -149,14 +99,14 @@ tr <- tree(training$classe ~., data = trainpc)
 plot(tr, main = "Plot of Tree Model")
 ```
 
-![](index_files/figure-html/unnamed-chunk-5-1.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png) 
 
 ```r
 trpr <- prune.tree(tr)
 plot(trpr, main = "Size of Tree vs Error\n")
 ```
 
-![](index_files/figure-html/unnamed-chunk-5-2.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-2.png) 
 
 ```r
 #predict on the validation data set
@@ -179,7 +129,6 @@ names(models)<-c("tree","lda")
 bestmodel<-names(models)[which(modelaccur == max(modelaccur))]
 #test the best model on the testing data set
 testpred<-predict(lda, newdata = testpc, type = "raw")
-
 accurtst<-sum(testpred==test[,output])/length(test[,output])
 ```
 
