@@ -2,7 +2,9 @@
 title: "Practical Machine Learning Course Project"
 author: "Victoria Milideeva"
 date: "March 27, 2016"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
 ###Synopsys
@@ -34,13 +36,13 @@ for (i in 1:length(names(data))){
         }
     }
 data1 <- data[,-exfeat]
-
+datatst1 <- datatst[,-exfeat]
 
 dm1 <- dim(data1)
 count <- length(exfeat)
 output<-which(names(data1)=="classe")
-for (i in 1:(length(names(data1))-1)){  data1[,i]= as.numeric(data1[,i])}
-
+for (i in 3:(length(names(data1))-1)){  data1[,i]= as.numeric(data1[,i])}
+for (i in 3:(length(names(datatst1))-1)){  datatst1[,i]= as.numeric(datatst1[,i])}
 
 ```
 The original training data set contains `r dm[1]` observations of `r dm[2]`  variables. The data set  "pml-testing.csv" does not contain "classe" column and can't be used for evaluation models.
@@ -68,6 +70,7 @@ training<-trainvalid[trainVal,]
 valid <- trainvalid[-trainVal,]
 test<-data1[-inTrain,]
 
+
 ```
 
 Choose the least amount of predictors using "principal component analysis" and "near zero variance" methods that could capture 95% if the variation in data.
@@ -84,6 +87,7 @@ Compute new variables for `r pcacmp` principal components for the data sets for 
 trainpc<-predict(pc, training[,-output])
 validpc<-predict(pc, valid[,-output])
 testpc<-predict(pc, test[,-output])
+
 #create models
 #tree
 models <- NULL
